@@ -1,0 +1,133 @@
+library(tidyverse)
+library(bellreg)
+library(LambertW)
+library(countreg)
+library(VGAM)
+library(pscl)
+#Data
+dk<- cells
+barplot(table(dk$cells),
+        main="Distribution of Dependent Variable",
+        xlab="Cells",
+        ylab="Counts",
+        density=100,
+        ylim=c(0,350)
+)
+
+##Regression Models
+zb<- zibellreg(cells ~ smoker+gender+age|smoker+gender+age, data = dk, approach = "mle")
+summary(zb)
+zip<- zeroinfl(cells ~ smoker+gender+age|smoker+gender+age, data = dk)
+AIC(zip)
+logLik(zip)
+zinb_d=zeroinfl(cells ~ smoker+gender+age|smoker+gender+age, data = dk, dist="negbin",link="logit")
+AIC(zinb_d)
+logLik(zinb_d)
+poi<- glm(cells ~ smoker+gender+age , family = poisson, data=dk) 
+AIC(poi)
+logLik(poi)
+negbin<- glm.nb(cells ~ smoker+gender+age , data=dk)
+AIC(negbin)
+logLik(negbin)
+bell <- bellreg(cells ~ smoker+gender+age , data =dk, approach = "mle")
+summary(bell)
+dk$gender<- as.factor(dk$gender)
+dk$smoker<- as.factor(dk$smoker)
+
+X <- model.matrix(~  smoker+ gender+ age, data = dk)
+X_zi <- model.matrix(~smoker+ gender+ age, data = dk)
+
+mu_hat=exp(as.vector(X %*% coef_bell)) #
+pi_hat<-exp(as.vector(X_zi %*% coef_zi))/(1+exp(as.vector(X_zi %*% coef_zi)))
+
+
+##rqr
+coef_bell<-coef(zb)$Degenerated
+coef_zi<-coef(zb)$Bell
+coefb<-coef(bell) 
+mu_hat=exp(as.vector(X %*% coef_bell)) 
+pi_hat<-exp(as.vector(X_zi %*% coef_zi))/(1+exp(as.vector(X_zi %*% coef_zi)))
+mu_bell=exp(as.vector(X %*% coefb)) 
+
+##pearson resid
+pear_poi<-pear_npnb(poi,type="pearson")
+pear_nb<-pear_npnb(negbin,type="pearson")
+pear_bel<-pear_bell(dk$cells,mu_bell)
+pear_zib<-pear_zibell(dk$cells,mu_hat,pi_hat)
+pear_zipoi<-pear_npnb(zip)
+pear_zinb<-pear_npnb(zinb_d)
+
+###deviance resid
+dev_pois<-dev_npnb(poi)
+dev_nb<-dev_npnb(negbin)
+dev_zip<-zip_dev(zip,dk$cells)
+zinbdev<-zinegbin_dev(zinb_d,dk$cells) 
+bell_dev<-dev_bell(dk$cells,mu_bell) 
+zibell_dev<-dev_zibell(dk$cells,mu_hat,pi_hat)
+
+##
+
+rqr_pois<-rqr_poi(dk$cells,as.vector(fitted(poi)))
+rqrnegbin<-rqr_nb(dk$cells,as.vector(fitted(negbin)),negbin$theta)
+rqr_be<-rqr_bell(dk$cells,mu_bell)
+rqr_zipo<-rqr_zip(dk$cells,as.vector(predict(zip,zitype="conditional")),as.vector(predict(zip,zitype="zprob")))
+rqr_zneg<-rqr_znb(dk$cells,as.vector(predict(zinb_d,zitype="conditional")),as.vector(predict(zinb_d,zitype="zprob")),zinb_d$theta)
+rqr_zb<-rqr_zibell(dk$cells,mu_hat,pi_hat)
+
+#
+dev.new(width=20, height=18 ,unit = "cm")
+par(mfrow=c(3,2))
+qqnorm(dev_pois,main="Deviance Res. of POISSON",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqline(dev_pois,main="Deviance Res. of POISSON",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqnorm(dev_nb,main="Deviance Res. of NEG. BIN.",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqline(dev_nb,main="Deviance Res. of NEG. BIN.",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+
+qqnorm(bell_dev,main="Deviance Res. of BELL",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqline(bell_dev,main="Deviance Res. of BELL",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+
+qqnorm(dev_zip,main="Deviance Res. of ZIP",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqline(dev_zip,main="Deviance Res. of ZIP",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+
+qqnorm(zinbdev,main="Deviance Res. of ZI NEG. BIN.",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqline(zinbdev,main="Deviance Res. of ZI NEG. BIN.",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqnorm(zibell_dev,main="Deviance Res. of ZIBELL",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqline(zibell_dev,main="Deviance Res. of ZIBELL",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+
+dev.new(width=20, height=18 ,unit = "cm")
+par(mfrow=c(3,2))
+qqnorm(pear_poi,main="Pearson of POISSON",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqline(pear_poi,main="Pearson of POISSON",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqnorm(pear_nb,main="Pearson of NEG. BIN.",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqline(pear_nb,main="Pearson of NEG. BIN.",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+
+qqnorm(pear_bel,main="Pearson of BELL",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqline(pear_bel,main="Pearson of BELL",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+
+qqnorm(pear_zipoi,main="Pearson of ZIP",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqline(pear_zipoi,main="Pearson of ZIP",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+
+
+qqnorm(pear_zib,main="Pearson of ZIBELL",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqline(pear_zib,main="Pearson of ZIBELL",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+
+
+qqnorm(pear_zinb,main="Pearson of ZI NEG. BIN.",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqline(pear_zinb,main="Pearson of ZI NEG. BIN.",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+
+
+
+dev.new(width=20, height=18 ,unit = "cm")
+par(mfrow=c(3,2))
+
+qqnorm(qnorm(rqr_pois),main="RQR of POISSON",ylab="Sample Quantiles",xlab="Theoretical Quantiles",xlim=c(-3, 3), ylim=c(-3, 4))
+qqline(qnorm(rqr_pois),main="RQR of POISSON",ylab="Sample Quantiles",xlab="Theoretical Quantiles",xlim=c(-3, 3), ylim=c(-3, 4))
+qqnorm(qnorm(rqrnegbin),main="RQR of NEG. BIN.",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqline(qnorm(rqrnegbin),main="RQR of NEG. BIN.",ylab="Sample Quantiles",xlab="Theoretical Quantiles")
+qqnorm(qnorm(rqr_be),main="RQR of BELL",ylab="Sample Quantiles",xlab="Theoretical Quantiles",xlim=c(-3, 3), ylim=c(-3, 4))
+qqline(qnorm(rqr_be),main="RQR of BELL",ylab="Sample Quantiles",xlab="Theoretical Quantiles",xlim=c(-3, 3), ylim=c(-3, 4))
+qqnorm(qnorm(rqr_zipo),main="RQR of ZIP",ylab="Sample Quantiles",xlab="Theoretical Quantiles",xlim=c(-3, 3), ylim=c(-3, 4))
+qqline(qnorm(rqr_zipo),main="RQR of ZIP",ylab="Sample Quantiles",xlab="Theoretical Quantiles",xlim=c(-3, 3), ylim=c(-3, 4))
+
+qqnorm(qnorm(rqr_zb),main="RQR of ZIBELL ",ylab="Sample Quantiles",xlab="Theoretical Quantiles",xlim=c(-3, 3), ylim=c(-3, 4))
+qqline(qnorm(rqr_zb),main="RQR of ZIBELL",ylab="Sample Quantiles",xlab="Theoretical Quantiles",xlim=c(-3, 3), ylim=c(-3, 4))
+qqnorm(qnorm(rqr_zneg),main="RQR of ZI NEG. BIN.",ylab="Sample Quantiles",xlab="Theoretical Quantiles",xlim=c(-3, 3), ylim=c(-3, 4))
