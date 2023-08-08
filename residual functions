@@ -175,10 +175,11 @@ dev_zibell<-function(y,mu,p){
   return(d2)
 }
 ######
+##
 zinb.loglik <- function(model, x) {
   mu <- as.vector(predict(model, zitype = "conditional"))
   theta <- model$theta
-  size <- theta
+  size <- 1/theta
   prob <- as.vector(predict(model, zitype = "zprob"))
   
   lik_zero <- pmin(pmax(prob, 1e-10), 1 - 1e-10) # Avoid probabilities too close to 0 or 1
@@ -188,6 +189,8 @@ zinb.loglik <- function(model, x) {
   lik[lik == 0] <- min(lik[lik != 0]) # To avoid log-likelihood becoming infinite
   log(lik)
 }
+####
+
 
 zinegbin_dev <- function(model, x) {
   mu_hat <- as.vector(predict(model, zitype = "conditional"))
