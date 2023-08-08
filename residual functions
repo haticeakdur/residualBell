@@ -1,11 +1,7 @@
-library(tidyverse)
-library(bellreg)
-library(LambertW)
-library(countreg)
-library(VGAM)
-library(pscl)
+
+
 ##functions##########################
-##functions related to bell distribution is taken from bellreg package github page##
+##bell distribution functions are taken from bellreg R package####
 dbell <- function(x, theta, log = FALSE){
   Bx <- c()
   for(i in 1:length(x)){
@@ -72,7 +68,6 @@ pzibell <- function(q, prob, theta, lower.tail = TRUE, log.p = FALSE){
     }
   }
 }
-
 dzpois <- function(x,lambda,p)
 {return((1-p)*dpois(x,lambda)+p*(x==0))}
 pzpois <- function(x,lambda,p)
@@ -89,8 +84,10 @@ rqr_poi<-function(y,mu){
   pvalue<-pmin(pmax(pvalue,10^{-10}),1-10^{-10})
   return(pvalue)
 }
+#rqr_norm<-function(y,mu,size){pvalue=pnorm(y,mu,size);return(pvalue)}
 
-rqr_nb<-function(y,mu,size){pvalue=pnbinom (y-1,size=size, mu=mu)
+rqr_nb<-function(y,mu,theta){pvalue=pnbinom (y-1,size=size, mu=mu)
+size <- 1 / theta
  + dnbinom (y,size = size, mu = mu) * runif(length(y))
 pvalue<-pmin(pmax(pvalue,10^{-10}),1-10^{-10})
 return(pvalue)
@@ -99,7 +96,9 @@ rqr_zip<-function(y,mu,p){pvalue=pzpois(y-1,mu,p) + dzpois (y, mu,p) * runif(len
 pvalue<-pmin(pmax(pvalue,10^{-10}),1-10^{-10})
 return(pvalue)}
 
-rqr_znb<-function(y,mu,p,size){pvalue=pznbinom (y-1,size,mu,p) + dznbinom (y,size,mu,p) * runif(length(y))
+rqr_znb<-function(y,mu,p,theta){
+size=1/theta
+pvalue=pznbinom (y-1,size,mu,p) + dznbinom (y,size,mu,p) * runif(length(y))
 pvalue<-pmin(pmax(pvalue,10^{-10}),1-10^{-10})
 return(pvalue)
 }
@@ -129,6 +128,8 @@ rqr_zibell<-function(y,mu,p){
   #pvalue<-pmin(pmax(pvalue,10^{-10}),1-10^{-10})
   return(pvalue)
 }
+
+
 
 ##deviance functions
 
@@ -193,6 +194,7 @@ zinegbin_dev <- function(model, x) {
 }
 
 #############
+
 zip.loglik <- function(model, x) {
   mu <- as.vector(predict(model, zitype = "conditional"))
   pi <- as.vector(predict(model, zitype = "zprob"))
