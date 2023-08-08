@@ -93,9 +93,9 @@ rqr_poi<-function(y,mu){
 }
 #rqr_norm<-function(y,mu,size){pvalue=pnorm(y,mu,size);return(pvalue)}
 
-rqr_nb<-function(y,mu,theta){pvalue=pnbinom (y-1,size=size, mu=mu)
+rqr_nb<-function(y,mu,theta){
 size <- 1 / theta
- + dnbinom (y,size = size, mu = mu) * runif(length(y))
+pvalue=pnbinom (y-1,size=size, mu=mu)+ dnbinom (y,size = size, mu = mu) * runif(length(y))
 pvalue<-pmin(pmax(pvalue,10^{-10}),1-10^{-10})
 return(pvalue)
 }
@@ -245,4 +245,4 @@ pear_zibell<-function(y,mu,p){
   }
   return(pea)
 }
-#####
+####
