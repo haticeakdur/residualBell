@@ -1,4 +1,11 @@
-
+#####
+library(tidyverse)
+library(openxlsx)
+library(bellreg)
+library(LambertW)
+library(countreg)
+library(VGAM)
+library(pscl)
 
 ##functions##########################
 ##bell distribution functions are taken from bellreg R package####
